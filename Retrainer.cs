@@ -1,12 +1,10 @@
 ﻿using System;
 using System.Linq;
 using System.Reflection;
-using System.Runtime.Remoting.Messaging;
 using BattleTech;
 using BattleTech.UI;
 using Harmony;
 using HBS;
-using HeurekaGames;
 using Newtonsoft.Json;
 using UnityEngine;
 using static Retrainer.Logger;
@@ -46,7 +44,7 @@ namespace Retrainer
                 var hotkeyPerformed = (Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift));
                 if (!hotkeyPerformed) return true;
 
-                if (!modSettings.onceOnly && __instance.curPilot.pilotDef.PilotTags.Contains("HasRetrained"))
+                if (modSettings.onceOnly && __instance.curPilot.pilotDef.PilotTags.Contains("HasRetrained"))
                 {
                     GenericPopupBuilder
                         .Create("Unable To Retrain", "Each pilot can only retrain once.")
@@ -60,7 +58,7 @@ namespace Retrainer
                 if (!__instance.simState.shipUpgrades.Any(u => u.Tags.Any(t => t.Contains("argo_trainingModule2"))))
                 {
                     GenericPopupBuilder
-                        .Create("Unable To Retrain", "You must have built a Training Module 2 upgrade aboard the Argo.")
+                        .Create("Unable To Retrain", "You must have built the Training Module 2 upgrade aboard the Argo.")
                         .AddButton("Acknowledged")
                         .CancelOnEscape()
                         .AddFader(LazySingletonBehavior<UIManager>.Instance.UILookAndColorConstants.PopupBackfill, 0.0f, true)
@@ -68,10 +66,10 @@ namespace Retrainer
                     return true;
                 }
 
-                if (__instance.simState.Funds < 500_000)
+                if (__instance.simState.Funds < modSettings.cost)
                 {
                     GenericPopupBuilder
-                        .Create("Unable To Retrain", $"Not enough money.  This will cost will cost ¢{modSettings.cost} (and you have ¢{__instance.simState.Funds}.")
+                        .Create("Unable To Retrain", $"You need ¢{modSettings.cost:N0}.")
                         .AddButton("Acknowledged")
                         .CancelOnEscape()
                         .AddFader(LazySingletonBehavior<UIManager>.Instance.UILookAndColorConstants.PopupBackfill, 0.0f, true)
@@ -79,13 +77,17 @@ namespace Retrainer
                     return true;
                 }
 
+                var message = modSettings.onceOnly
+                    ? $"This will return skills to their original values and refund all XP.\nIt will cost ¢{modSettings.cost:N0} and each pilot can only retrain once."
+                    : $"This will return skills to their original values and refund all XP.\nIt will cost ¢{modSettings.cost:N0}";
+
                 GenericPopupBuilder
-                    .Create("Retrain", "This will return skills to their original values and refund XP.\nIt will cost ¢500,000 and each pilot can only retrain once.")
-                    .AddButton("Cancel")
-                    .AddButton("Retrain Pilot", delegate { RespecAndRefresh(__instance, __instance.curPilot); })
-                    .CancelOnEscape()
-                    .AddFader(LazySingletonBehavior<UIManager>.Instance.UILookAndColorConstants.PopupBackfill, 0.0f, true)
-                    .Render();
+                    .Create("Retrain", message)
+                        .AddButton("Cancel")
+                        .AddButton("Retrain Pilot", delegate { RespecAndRefresh(__instance, __instance.curPilot); })
+                        .CancelOnEscape()
+                        .AddFader(LazySingletonBehavior<UIManager>.Instance.UILookAndColorConstants.PopupBackfill, 0.0f, true)
+                        .Render();
                 return false;
             }
         }
@@ -93,14 +95,14 @@ namespace Retrainer
         public static void RespecAndRefresh(SGBarracksMWDetailPanel __instance, Pilot pilot)
         {
             __instance.simState.RespecPilot(pilot);
-            __instance.simState.AddFunds(-500_000);
+            __instance.simState.AddFunds(-modSettings.cost);
             pilot.pilotDef.PilotTags.Add("HasRetrained");
             __instance.DisplayPilot(pilot);
         }
 
         public class Settings
         {
-            public bool enableDebug = true;
+            public bool enableDebug;
             public int cost;
             public bool onceOnly;
         }

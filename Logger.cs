@@ -9,6 +9,7 @@ namespace Retrainer
     public static class Logger
     {
         private static string LogFilePath => Path.Combine(modDirectory, "log.txt");
+
         private static readonly string Version = ((AssemblyFileVersionAttribute) Attribute.GetCustomAttribute(
             Assembly.GetExecutingAssembly(), typeof(AssemblyFileVersionAttribute), false)).Version;
 
