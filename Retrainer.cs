@@ -44,7 +44,11 @@ namespace Retrainer
                 var hotkeyPerformed = (Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift));
                 if (!hotkeyPerformed) return true;
 
-                if (modSettings.onceOnly && __instance.curPilot.pilotDef.PilotTags.Contains("HasRetrained"))
+                object instance = __instance;
+                SimGameState simState = (SimGameState)instance.GetType().GetField("simState", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(instance);
+                Pilot curPilot = (Pilot)instance.GetType().GetField("curPilot", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(instance);
+
+                if (modSettings.onceOnly && curPilot.pilotDef.PilotTags.Contains("HasRetrained"))
                 {
                     GenericPopupBuilder
                         .Create("Unable To Retrain", "Each pilot can only retrain once.")
@@ -55,7 +59,7 @@ namespace Retrainer
                     return true;
                 }
 
-                if (!__instance.simState.shipUpgrades.Any(u => u.Tags.Any(t => t.Contains("argo_trainingModule2"))))
+                if (!simState.ShipUpgrades.Any(u => u.Tags.Any(t => t.Contains("argo_trainingModule2"))))
                 {
                     GenericPopupBuilder
                         .Create("Unable To Retrain", "You must have built the Training Module 2 upgrade aboard the Argo.")
@@ -66,7 +70,7 @@ namespace Retrainer
                     return true;
                 }
 
-                if (__instance.simState.Funds < modSettings.cost)
+                if (simState.Funds < modSettings.cost)
                 {
                     GenericPopupBuilder
                         .Create("Unable To Retrain", $"You need ¢{modSettings.cost:N0}.")
@@ -84,7 +88,7 @@ namespace Retrainer
                 GenericPopupBuilder
                     .Create("Retrain", message)
                         .AddButton("Cancel")
-                        .AddButton("Retrain Pilot", delegate { RespecAndRefresh(__instance, __instance.curPilot); })
+                        .AddButton("Retrain Pilot", delegate { RespecAndRefresh(__instance, curPilot, simState); })
                         .CancelOnEscape()
                         .AddFader(LazySingletonBehavior<UIManager>.Instance.UILookAndColorConstants.PopupBackfill, 0.0f, true)
                         .Render();
@@ -92,10 +96,11 @@ namespace Retrainer
             }
         }
 
-        public static void RespecAndRefresh(SGBarracksMWDetailPanel __instance, Pilot pilot)
+        public static void RespecAndRefresh(SGBarracksMWDetailPanel __instance, Pilot pilot, SimGameState simState)
         {
-            __instance.simState.RespecPilot(pilot);
-            __instance.simState.AddFunds(-modSettings.cost);
+            object instance = simState;
+            instance.GetType().GetMethod("RespecPilot", BindingFlags.NonPublic | BindingFlags.Instance).Invoke(instance, new object[] { pilot });
+            simState.AddFunds(-modSettings.cost);
             pilot.pilotDef.PilotTags.Add("HasRetrained");
             __instance.DisplayPilot(pilot);
         }
