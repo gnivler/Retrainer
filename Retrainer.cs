@@ -82,8 +82,8 @@ namespace Retrainer
                 }
 
                 var message = modSettings.onceOnly
-                    ? $"This will return skills to their original values and refund all XP.\nIt will cost ¢{modSettings.cost:N0} and each pilot can only retrain once."
-                    : $"This will return skills to their original values and refund all XP.\nIt will cost ¢{modSettings.cost:N0}";
+                    ? $"This will set skills to 1 and refund all XP.\nIt will cost ¢{modSettings.cost:N0} and each pilot can only retrain once."
+                    : $"This will set skills to 1 and refund all XP.\nIt will cost ¢{modSettings.cost:N0}";
 
                 GenericPopupBuilder
                     .Create("Retrain", message)
