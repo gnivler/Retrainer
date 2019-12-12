@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using BattleTech;
@@ -32,6 +33,8 @@ namespace Retrainer
                 Log(e);
                 modSettings = new Settings();
             }
+
+            
         }
 
         private static void Log(object input)
@@ -98,6 +101,7 @@ namespace Retrainer
 
         private static void RespecAndRefresh(SGBarracksMWDetailPanel __instance, Pilot pilot)
         {
+            
             WipePilotStats(pilot);
             UnityGameInstance.BattleTechGame.Simulation.AddFunds(-modSettings.cost);
             pilot.pilotDef.PilotTags.Add("HasRetrained");
@@ -121,20 +125,20 @@ namespace Retrainer
             try
             {
                 Log($"Base:\t {pilotDef.BaseGunnery} / {pilotDef.BasePiloting} / {pilotDef.BaseGuts} / {pilotDef.BaseTactics}");
-                Log($"Bonus:\t {pilotDef.BasePiloting} / {pilotDef.BonusPiloting} / {pilotDef.BonusGuts} / {pilotDef.BonusTactics}");
+                Log($"Bonus:\t {pilotDef.BonusGunnery} / {pilotDef.BonusPiloting} / {pilotDef.BonusGuts} / {pilotDef.BonusTactics}");
 
                 var num = 0;
-                num += sim.GetLevelRangeCost(1, pilotDef.SkillPiloting - 1);
                 num += sim.GetLevelRangeCost(1, pilotDef.SkillGunnery - 1);
+                num += sim.GetLevelRangeCost(1, pilotDef.SkillPiloting - 1);
                 num += sim.GetLevelRangeCost(1, pilotDef.SkillGuts - 1);
                 num += sim.GetLevelRangeCost(1, pilotDef.SkillTactics - 1);
 
-                Traverse.Create(pilotDef).Property("BasePiloting").SetValue(1);
                 Traverse.Create(pilotDef).Property("BaseGunnery").SetValue(1);
+                Traverse.Create(pilotDef).Property("BasePiloting").SetValue(1);
                 Traverse.Create(pilotDef).Property("BaseGuts").SetValue(1);
                 Traverse.Create(pilotDef).Property("BaseTactics").SetValue(1);
-                Traverse.Create(pilotDef).Property("BonusPiloting").SetValue(1);
                 Traverse.Create(pilotDef).Property("BonusGunnery").SetValue(1);
+                Traverse.Create(pilotDef).Property("BonusPiloting").SetValue(1);
                 Traverse.Create(pilotDef).Property("BonusGuts").SetValue(1);
                 Traverse.Create(pilotDef).Property("BonusTactics").SetValue(1);
 
