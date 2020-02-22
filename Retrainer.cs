@@ -39,7 +39,7 @@ namespace Retrainer
 
         private static void Log(object input)
         {
-            FileLog.Log($"[Retrainer] {input}");
+            //FileLog.Log($"[Retrainer] {input}");
         }
 
         [HarmonyPatch(typeof(SGBarracksMWDetailPanel), nameof(SGBarracksMWDetailPanel.OnSkillsSectionClicked), MethodType.Normal)]
@@ -107,7 +107,6 @@ namespace Retrainer
         private static void RespecAndRefresh(SGBarracksMWDetailPanel __instance, Pilot pilot)
         {
             WipePilotStats(pilot);
-            Log(UnityGameInstance.BattleTechGame.Simulation.GetType().GetMethod("AddFunds"));
             UnityGameInstance.BattleTechGame.Simulation.AddFunds(-modSettings.cost);
             pilot.pilotDef.PilotTags.Add("HasRetrained");
             __instance.DisplayPilot(pilot);
