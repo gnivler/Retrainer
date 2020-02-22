@@ -1,5 +1,4 @@
 ﻿using System;
-using System.IO;
 using System.Linq;
 using System.Reflection;
 using BattleTech;
@@ -9,6 +8,7 @@ using HBS;
 using Newtonsoft.Json;
 using UnityEngine;
 
+// ReSharper disable UnusedType.Global
 // ReSharper disable UnusedMember.Global
 // ReSharper disable once ClassNeverInstantiated.Global
 // ReSharper disable InconsistentNaming
@@ -22,8 +22,7 @@ namespace Retrainer
         public static void Init(string settingsJson)
         {
             Log("Startup");
-            var harmony = HarmonyInstance.Create("ca.gnivler.BattleTech.Retrainer");
-            harmony.PatchAll(Assembly.GetExecutingAssembly());
+
             try
             {
                 modSettings = JsonConvert.DeserializeObject<Settings>(settingsJson);
@@ -34,21 +33,27 @@ namespace Retrainer
                 modSettings = new Settings();
             }
 
-            
+            var harmony = HarmonyInstance.Create("ca.gnivler.BattleTech.Retrainer");
+            harmony.PatchAll(Assembly.GetExecutingAssembly());
         }
 
         private static void Log(object input)
         {
-            //FileLog.Log($"[Retrainer] {input}");
+            FileLog.Log($"[Retrainer] {input}");
         }
 
         [HarmonyPatch(typeof(SGBarracksMWDetailPanel), nameof(SGBarracksMWDetailPanel.OnSkillsSectionClicked), MethodType.Normal)]
         public static class SGBarracksMWDetailPanel_OnSkillsSectionClicked_Patch
         {
+            private static readonly UIColorRef backfill = LazySingletonBehavior<UIManager>.Instance.UILookAndColorConstants.PopupBackfill;
+
             public static bool Prefix(SGBarracksMWDetailPanel __instance, Pilot ___curPilot)
             {
                 var hotkeyPerformed = Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift);
-                if (!hotkeyPerformed) return true;
+                if (!hotkeyPerformed)
+                {
+                    return true;
+                }
 
                 var simState = UnityGameInstance.BattleTechGame.Simulation;
                 if (modSettings.onceOnly && ___curPilot.pilotDef.PilotTags.Contains("HasRetrained"))
@@ -57,7 +62,7 @@ namespace Retrainer
                         .Create("Unable To Retrain", "Each pilot can only retrain once.")
                         .AddButton("Acknowledged")
                         .CancelOnEscape()
-                        .AddFader(LazySingletonBehavior<UIManager>.Instance.UILookAndColorConstants.PopupBackfill)
+                        .AddFader(backfill)
                         .Render();
                     return true;
                 }
@@ -68,7 +73,7 @@ namespace Retrainer
                         .Create("Unable To Retrain", "You must have built the Training Module 2 upgrade aboard the Argo.")
                         .AddButton("Acknowledged")
                         .CancelOnEscape()
-                        .AddFader(LazySingletonBehavior<UIManager>.Instance.UILookAndColorConstants.PopupBackfill)
+                        .AddFader(backfill)
                         .Render();
                     return true;
                 }
@@ -79,7 +84,7 @@ namespace Retrainer
                         .Create("Unable To Retrain", $"You need ¢{modSettings.cost:N0}.")
                         .AddButton("Acknowledged")
                         .CancelOnEscape()
-                        .AddFader(LazySingletonBehavior<UIManager>.Instance.UILookAndColorConstants.PopupBackfill)
+                        .AddFader(backfill)
                         .Render();
                     return true;
                 }
@@ -93,7 +98,7 @@ namespace Retrainer
                     .AddButton("Cancel")
                     .AddButton("Retrain Pilot", () => RespecAndRefresh(__instance, ___curPilot))
                     .CancelOnEscape()
-                    .AddFader(LazySingletonBehavior<UIManager>.Instance.UILookAndColorConstants.PopupBackfill)
+                    .AddFader(backfill)
                     .Render();
                 return false;
             }
@@ -101,8 +106,8 @@ namespace Retrainer
 
         private static void RespecAndRefresh(SGBarracksMWDetailPanel __instance, Pilot pilot)
         {
-            
             WipePilotStats(pilot);
+            Log(UnityGameInstance.BattleTechGame.Simulation.GetType().GetMethod("AddFunds"));
             UnityGameInstance.BattleTechGame.Simulation.AddFunds(-modSettings.cost);
             pilot.pilotDef.PilotTags.Add("HasRetrained");
             __instance.DisplayPilot(pilot);
@@ -114,7 +119,7 @@ namespace Retrainer
             var sim = UnityGameInstance.BattleTechGame.Simulation;
             var pilotDef = pilot.pilotDef.CopyToSim();
 
-            foreach (string value in sim.Constants.Story.CampaignCommanderUpdateTags)
+            foreach (var value in sim.Constants.Story.CampaignCommanderUpdateTags)
             {
                 if (!sim.CompanyTags.Contains(value))
                 {
