@@ -8,5 +8,6 @@
         "cost": 500000,
         "onceOnly": true ,
         "trainingModuleRequired": true,
+		"ignoredAbilities": [],
     }
 }
