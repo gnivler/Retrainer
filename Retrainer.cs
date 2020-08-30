@@ -1,11 +1,12 @@
-﻿using System;
-using System.Linq;
-using System.Reflection;
-using BattleTech;
+﻿using BattleTech;
 using BattleTech.UI;
 using Harmony;
 using HBS;
 using Newtonsoft.Json;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
 using UnityEngine;
 
 // ReSharper disable UnusedType.Global
@@ -146,7 +147,12 @@ namespace Retrainer
                 Traverse.Create(pilotDef).Property("BonusGuts").SetValue(1);
                 Traverse.Create(pilotDef).Property("BonusTactics").SetValue(1);
 
-                pilotDef.abilityDefNames.Clear();
+                
+
+               // pilotDef.abilityDefNames.Clear();
+                pilotDef.abilityDefNames.RemoveAll(x=>!modSettings.ignoredAbilities.Contains(x));
+
+
                 pilotDef.SetSpentExperience(0);
                 pilotDef.ForceRefreshAbilityDefs();
                 pilotDef.ResetBonusStats();
@@ -164,6 +170,7 @@ namespace Retrainer
             public int cost;
             public bool onceOnly;
             public bool trainingModuleRequired;
+            public List<string> ignoredAbilities = new List<string>();
         }
     }
 }
