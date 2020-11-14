@@ -107,7 +107,9 @@ namespace Retrainer
 
         private static void RespecAndRefresh(SGBarracksMWDetailPanel __instance, Pilot pilot)
         {
+            var inj = pilot.StatCollection.GetValue<int>("Injuries");//
             WipePilotStats(pilot);
+            pilot.StatCollection.ModifyStat<int>("preReTrainingInjuries", 0, "Injuries", StatCollection.StatOperation.Set, inj, -1, true);//
             UnityGameInstance.BattleTechGame.Simulation.AddFunds(-modSettings.cost);
             pilot.pilotDef.PilotTags.Add("HasRetrained");
             __instance.DisplayPilot(pilot);
@@ -157,6 +159,8 @@ namespace Retrainer
                 pilotDef.ForceRefreshAbilityDefs();
                 pilotDef.ResetBonusStats();
                 pilot.FromPilotDef(pilotDef);
+
+
                 pilot.AddExperience(0, "Respec", num);
             }
             catch (Exception ex)
