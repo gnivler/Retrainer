@@ -43,6 +43,34 @@ namespace Retrainer
             //FileLog.Log($"[Retrainer] {input}");
         }
 
+        public static void OnAcceptPilotConfirm(SGBarracksAdvancementPanel advancement, SimGameState simState, SGBarracksWidget barracks, Pilot tempPilot)
+        {
+            advancement.Close();
+            simState.UpgradePilot(tempPilot);
+            barracks.Reset(tempPilot);
+            tempPilot = null;
+        }
+
+        [HarmonyPatch(typeof(SGBarracksMWDetailPanel), "OnPilotConfirmed")]
+        public static class SGBarracksMWDetailPanel_OnPilotConfirmed
+        {
+            public static bool Prefix(SGBarracksMWDetailPanel __instance, SGBarracksAdvancementPanel ___advancement, SGBarracksWidget ___barracks, Pilot ___tempPilot)
+            {
+                var sim = UnityGameInstance.BattleTechGame.Simulation;
+                if (___advancement.PendingPrimarySkillUpgrades())
+                {
+                    GenericPopupBuilder.Create("Complete Training?", $"{modSettings.confirmAbilityText}").AddButton("Cancel", null, true, null).AddFader(new UIColorRef?(LazySingletonBehavior<UIManager>.Instance.UILookAndColorConstants.FadeToHalfBlack), 0f, true).CancelOnEscape().AddButton("Confirm",
+                            delegate { OnAcceptPilotConfirm(___advancement, sim, ___barracks, ___tempPilot); }, true, null).AddFader(new UIColorRef?(LazySingletonBehavior<UIManager>.Instance.UILookAndColorConstants.PopupBackfill), 0f, true).Render();
+                    return false;
+                }
+
+                OnAcceptPilotConfirm(___advancement, sim, ___barracks, ___tempPilot);
+                return false;
+            }
+        }
+
+
+
         [HarmonyPatch(typeof(SGBarracksMWDetailPanel), nameof(SGBarracksMWDetailPanel.OnSkillsSectionClicked), MethodType.Normal)]
         public static class SGBarracksMWDetailPanel_OnSkillsSectionClicked_Patch
         {
@@ -175,6 +203,9 @@ namespace Retrainer
             public bool onceOnly;
             public bool trainingModuleRequired;
             public List<string> ignoredAbilities = new List<string>();
+
+            public string confirmAbilityText =
+                "Confirming this Ability selection is permanent. You may only have two Primary Abilities and one Specialist Ability, and MechWarriors cannot be retrained.";
         }
     }
 }
