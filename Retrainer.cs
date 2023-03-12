@@ -163,6 +163,31 @@ namespace Retrainer {
       pilot.pilotDef.PilotTags.Add("HasRetrained");
       __instance.DisplayPilot(pilot);
     }
+    public static void OnAcceptPilotConfirm(SGBarracksAdvancementPanel advancement, SimGameState simState, SGBarracksWidget barracks, Pilot tempPilot)
+    {
+        advancement.Close();
+        simState.UpgradePilot(tempPilot);
+        barracks.Reset(tempPilot);
+        tempPilot = null;
+    }
+
+    [HarmonyPatch(typeof(SGBarracksMWDetailPanel), "OnPilotConfirmed")]
+    public static class SGBarracksMWDetailPanel_OnPilotConfirmed
+    {
+        public static bool Prefix(SGBarracksMWDetailPanel __instance)
+        {
+            var sim = UnityGameInstance.BattleTechGame.Simulation;
+            if (__instance.advancement.PendingPrimarySkillUpgrades())
+            {
+                GenericPopupBuilder.Create("Complete Training?", $"{modSettings.confirmAbilityText}").AddButton("Cancel", null, true, null).AddFader(new UIColorRef?(LazySingletonBehavior<UIManager>.Instance.UILookAndColorConstants.FadeToHalfBlack), 0f, true).CancelOnEscape().AddButton("Confirm",
+                    delegate { OnAcceptPilotConfirm(__instance.advancement, sim, __instance.barracks, __instance.tempPilot); }, true, null).AddFader(new UIColorRef?(LazySingletonBehavior<UIManager>.Instance.UILookAndColorConstants.PopupBackfill), 0f, true).Render();
+                return false;
+            }
+
+            OnAcceptPilotConfirm(__instance.advancement, sim, __instance.barracks, __instance.tempPilot);
+            return false;
+        }
+    }
 
     // copied and changed from RespecPilot()
     private static void WipePilotStats(Pilot pilot) {
@@ -185,14 +210,22 @@ namespace Retrainer {
         num += sim.GetLevelRangeCost(1, pilotDef.SkillGuts - 1);
         num += sim.GetLevelRangeCost(1, pilotDef.SkillTactics - 1);
 
-        Traverse.Create(pilotDef).Property("BaseGunnery").SetValue(1);
-        Traverse.Create(pilotDef).Property("BasePiloting").SetValue(1);
-        Traverse.Create(pilotDef).Property("BaseGuts").SetValue(1);
-        Traverse.Create(pilotDef).Property("BaseTactics").SetValue(1);
-        Traverse.Create(pilotDef).Property("BonusGunnery").SetValue(1);
-        Traverse.Create(pilotDef).Property("BonusPiloting").SetValue(1);
-        Traverse.Create(pilotDef).Property("BonusGuts").SetValue(1);
-        Traverse.Create(pilotDef).Property("BonusTactics").SetValue(1);
+        pilotDef.BaseGunnery = 1;
+        pilotDef.BasePiloting = 1;
+        pilotDef.BaseGuts = 1;
+        pilotDef.BaseTactics = 1;
+        pilotDef.BonusGunnery = 1;
+        pilotDef.BonusPiloting = 1;
+        pilotDef.BonusGuts = 1;
+        pilotDef.BonusTactics = 1;
+        //Traverse.Create(pilotDef).Property("BaseGunnery").SetValue(1);
+        //Traverse.Create(pilotDef).Property("BasePiloting").SetValue(1);
+        //Traverse.Create(pilotDef).Property("BaseGuts").SetValue(1);
+        //Traverse.Create(pilotDef).Property("BaseTactics").SetValue(1);
+        //Traverse.Create(pilotDef).Property("BonusGunnery").SetValue(1);
+        //Traverse.Create(pilotDef).Property("BonusPiloting").SetValue(1);
+        //Traverse.Create(pilotDef).Property("BonusGuts").SetValue(1);
+        //Traverse.Create(pilotDef).Property("BonusTactics").SetValue(1);
 
 
 
@@ -215,6 +248,8 @@ namespace Retrainer {
       public bool onceOnly;
       public bool trainingModuleRequired;
       public List<string> ignoredAbilities = new List<string>();
-    }
+
+      public string confirmAbilityText = "Confirming this Ability selection is permanent. You may only have two Primary Abilities and one Specialist Ability, and MechWarriors cannot be retrained.";
+        }
   }
 }
